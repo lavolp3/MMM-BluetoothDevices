@@ -43,7 +43,7 @@ If your running MagicMirror in [docker](https://docs.magicmirror.builders/gettin
 | layout                    | Object |                                  |                                                               |
 | layout.title              | Object |                                  |                                                               |
 | layout.title.position     | String | `bottom`                         | either `top` or `bottom`                                      |
-| layout.title.key          | String | `bottom`                         | the key of the device data to show                            |
+| layout.title.key          | String | `name`                           | the key of the device data to show                            |
 | layout.data               | Object |                                  |                                                               |
 | layout.data.position      | String | `bottom`                         | either `top` or `bottom`                                      |
 | layout.data.fields        | Array  | `{ key: 'mode', text: 'mode' }`  |                                                               |
