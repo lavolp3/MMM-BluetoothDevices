@@ -13,6 +13,12 @@ Written in Javascript and utilizes the BlueZ Linux Bluetooth stack via its nativ
 When running magic mirror and you open the web interface, if not already, the node_helper will start connecting and listening to your configured bluetooth device(s).
 
 ## Installation
+Navigate into your MagicMirror's modules folder and execute:
+```bash
+git clone git@github.com:timodejong95/MMM-BluetoothDevices.git
+cd MMM-BluetoothDevices
+npm install
+```
 
 ### Config file
 To run own services (GATT) we need to permission to start a service on the system D-Bus.
