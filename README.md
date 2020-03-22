@@ -34,9 +34,10 @@ If your running MagicMirror in [docker](https://docs.magicmirror.builders/gettin
 | mode                      | String | `le`                             |                                                               |
 | hci                       | String | `hci0`                           | which hci port to take for the bluetooth adapter              |
 | interfaceName             | String | `org.bluez.Adapter1`             | the bluetooth adapter name to take                            |
-| services                  | Array  | `{ type: 'CurrentTimeService' }` | bluetooth GATT services                                       |
+| services                  | Array  | `{ type: "CurrentTimeService" }` | bluetooth GATT services                                       |
 | services.type             | String |                                  | the service name, see [services](#services)                   |
 | devices                   | Array  | `[]`                             | the bluetooth devices                                         |
+| devices[]                 | Object |                                  | a bluetooth device                                            |
 | devices[].type            | String |                                  | the device name, see [devices](#devices)                      |
 | devices[].name            | String |                                  | the name for the devices, can be used in `layout.data.fields` |
 | devices[].mac             | String |                                  | the device bluetooth mac                                      |
@@ -46,18 +47,19 @@ If your running MagicMirror in [docker](https://docs.magicmirror.builders/gettin
 | layout.title.key          | String | `name`                           | the key of the device data to show                            |
 | layout.data               | Object |                                  |                                                               |
 | layout.data.position      | String | `bottom`                         | either `top` or `bottom`                                      |
-| layout.data.fields        | Array  | `{ key: 'mode', text: 'mode' }`  |                                                               |
+| layout.data.fields        | Array  | `{ key: "mode", text: "mode" }`  | the custom fields                                             |
+| layout.data.fields[]      | Object |                                  | a custom field                                                |
 | layout.data.fields[].key  | String |                                  | the label                                                     |
 | layout.data.fields[].text | String |                                  | the key of the device data to show                            |
 
 ### Example
-```json
+```
 {
-  "module": "MMM-BluetoothDevices",
-  "position": "top_bar",
-  "config": {
-    "devices": [
-      { "type": "OralBToothbrush", "name": "oralb", "mac": "XX:XX:XX:XX:XX:XX" }
+  module: "MMM-BluetoothDevices",
+  position: "top_bar",
+  config: {
+    devices: [
+      { type: "OralBToothbrush", name: "oralb", mac: "XX:XX:XX:XX:XX:XX" }
     ]
   }
 }
@@ -86,4 +88,3 @@ If you have any tips/suggestions or want to create support for a new bluetooth d
  
 ## Credits
 Credits to [Hypfer/Cybele](https://github.com/Hypfer/Cybele) I used this package to see how to make connection with bluetooth devices.
-
