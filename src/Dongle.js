@@ -2,6 +2,7 @@
 
 const devices = require('./devices');
 const Eventable = require('./Eventable');
+const UnknownError = require('./errors/UnknownError');
 const CurrentTimeService = require('./services/CurrentTimeService');
 
 class Dongle extends Eventable {
@@ -31,26 +32,13 @@ class Dongle extends Eventable {
 
     return new Promise((resolve, reject) => {
       this.setupServices(bus, service)
-        .then(() => console.log('services done'))
-        .then(() => {
-          console.log('this.getInterface(service)');
-          return this.getInterface(service);
-        })
-        .then((adapter) => {
-          console.log('this.stopDiscovery(adapter)');
-          return this.stopDiscovery(adapter);
-        })
-        .then((adapter) => {
-          console.log('this.startDiscovery(adapter)');
-          return this.startDiscovery(adapter);
-        })
-        .then(() => {
-          console.log('this.connectDevices(service)');
-          return this.connectDevices(service);
-        })
+        .then(() => this.getInterface(service))
+        .then((adapter) => this.stopDiscovery(adapter))
+        .then((adapter) => this.startDiscovery(adapter))
+        .then(() => this.connectDevices(service))
         .then(() => this.emit('setupCompleted'))
         .then(() => resolve(this))
-        .catch(reject);
+        .catch((exception) => reject(exception));
     });
   }
 
@@ -65,15 +53,12 @@ class Dongle extends Eventable {
   }
 
   setupServices(bus, service) {
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       this.currentTimeService = new CurrentTimeService(bus, service, { hci: this.hci });
 
-      try {
-        await this.currentTimeService.initialize();
-        resolve();
-      } catch (exception) {
-        reject(exception);
-      }
+      this.currentTimeService.initialize()
+        .then(() => resolve())
+        .catch((exception) => reject(exception));
     });
   }
 
@@ -81,7 +66,12 @@ class Dongle extends Eventable {
     return new Promise((resolve, reject) => {
       service.getInterface(this.path, this.interfaceName, (exception, adapter) => {
         if (exception) {
-          reject(exception);
+          exception = Array.isArray(exception) ? exception.join('.') : exception;
+
+          reject(new UnknownError({
+            troubleshooting: 'dongle#interface',
+            exception,
+          }));
         } else {
           resolve(adapter);
         }
@@ -98,7 +88,10 @@ class Dongle extends Eventable {
           if (exception === 'No discovery started') {
             resolve(adapter);
           } else {
-            reject(new Error(`Unknown stop discovery exception: ${exception}`));
+            reject(new UnknownError({
+              troubleshooting: 'dongle#stop-discovery',
+              exception,
+            }));
           }
         } else {
           resolve(adapter);
@@ -111,11 +104,17 @@ class Dongle extends Eventable {
     return new Promise((resolve, reject) => {
       adapter.SetDiscoveryFilter([['Transport', ['s', this.mode]]], (exception) => {
         if (exception) {
-          reject(exception);
+          reject(new UnknownError({
+            troubleshooting: 'dongle#start-discovery-filter',
+            exception,
+          }));
         } else {
           adapter.StartDiscovery((err) => {
             if (err) {
-              reject(exception);
+              reject(new UnknownError({
+                troubleshooting: 'dongle#start-discovery',
+                exception: err,
+              }));
             } else {
               resolve();
             }
@@ -167,7 +166,8 @@ class Dongle extends Eventable {
               }
             });
           } else {
-            console.log('Unhandled Device msg:', msg, JSON.stringify(msg));
+            // TODO: better log
+            console.log('Unhandled Device msg:', message, JSON.stringify(message));
           }
 
           this.devices.map((device) => device.update(message.body[0], dev, props));
@@ -192,9 +192,10 @@ class Dongle extends Eventable {
 
             this.emit('death', message);
           } else {
-            // unhandled adapter message
+            // TODO: log unhandled adapter message
           }
         } else {
+          // TODO: better log
           console.log('Unhandled other message:', message, JSON.stringify(message));
         }
       }
@@ -208,28 +209,33 @@ class Dongle extends Eventable {
       promises.push(this.connectDevice(service, device));
     }
 
-    await Promise.all(promises);
+    return Promise.all(promises);
   }
 
-  connectDevice(service, device, maxTries = 3) {
+  connectDevice(service, device, maxTries = 1) {
     return new Promise(async (resolve, reject) => {
-      const deviceInterface = await this.getDeviceInterface(
-        service,
-        `${this.path}/${device.macPath}`,
-        'org.bluez.Device1',
-      );
-
-      return device.connect(deviceInterface, maxTries);
+      this.getDeviceInterface(service, device, 'org.bluez.Device1')
+        .then((deviceInterface) => device.connect(deviceInterface, maxTries))
+        .then((response) => resolve(response))
+        .catch((exception) => reject(exception));
     });
   }
 
-  getDeviceInterface(service, path, ifaceName) {
+  getDeviceInterface(service, device, ifaceName) {
+    const path = `${this.path}/${device.macPath}`;
+
     return new Promise(((resolve, reject) => {
       service.getInterface(path, ifaceName, (exception, iFace) => {
         exception = Array.isArray(exception) ? exception.join('.') : exception;
 
         if (exception) {
-          reject(exception);
+          reject(new UnknownError({
+            troubleshooting: 'dongle#device-interface',
+            exception,
+            extra: {
+              device,
+            },
+          }));
         } else {
           resolve(iFace);
         }

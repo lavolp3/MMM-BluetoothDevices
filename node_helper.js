@@ -38,14 +38,14 @@ module.exports = NodeHelper.create({
     });
   },
 
-  stop() {
+  async stop() {
     if (!this.started) {
       return;
     }
 
     console.log(`Stopping hub for: ${this.name}`);
 
-    hub.destroy();
+    await dongle.destroy();
   },
 
   socketNotificationReceived(notification, payload) {

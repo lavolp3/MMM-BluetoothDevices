@@ -48,7 +48,7 @@ const MODES = {
 
 class OralBToothbrush extends Device {
   handleAdvertisingForDevice(props) {
-    if (propsManufacturerData) {
+    if (props.ManufacturerData) {
       const parsedData = this.parseData(props.ManufacturerData);
 
       this.emit('update', {

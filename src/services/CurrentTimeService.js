@@ -1,5 +1,7 @@
 'use strict';
 
+const UnknownError = require('../errors/UnknownError');
+
 class CurrentTimeService {
   constructor(bus, service, options) {
     this.bus = bus;
@@ -112,7 +114,10 @@ class CurrentTimeService {
             error = Array.isArray(error) ? error.join('.') : error;
 
             if (error) {
-              reject(new Error(`Failed to fetch org.bluez.GattManager1 for ${this.hci}`));
+              reject(new UnknownError({
+                troubleshooting: 'services#invalid-adapter',
+                exception: new Error(`Failed to fetch org.bluez.GattManager1 for hci: ${this.hci}`),
+              }));
             } else {
               this.gattMgrIface = gattMgrIface;
 
@@ -120,7 +125,10 @@ class CurrentTimeService {
                 e = Array.isArray(e) ? e.join('.') : e;
 
                 if (e) {
-                  reject(e);
+                  reject(new UnknownError({
+                    troubleshooting: 'services',
+                    exception: e,
+                  }));
                 } else {
                   resolve(true);
                 }
@@ -138,7 +146,10 @@ class CurrentTimeService {
         exception = Array.isArray(exception) ? exception.join('.') : exception;
 
         if (exception) {
-          reject(exception);
+          reject(new UnknownError({
+            troubleshooting: 'services#destroy',
+            exception,
+          }));
         } else {
           this.bus.releaseName(this.serviceName, resolve);
         }
