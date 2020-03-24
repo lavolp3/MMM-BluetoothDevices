@@ -2,22 +2,28 @@
 
 const devices = require('./devices');
 const Eventable = require('./Eventable');
+const Logger = require('./Logger');
 const UnknownError = require('./errors/UnknownError');
 const CurrentTimeService = require('./services/CurrentTimeService');
 
 class Dongle extends Eventable {
   /**
    * @param {object} options
+   * @param {Logger} logger
    */
-  constructor(options) {
+  constructor(options, logger) {
     super();
     this.name = options.name;
     this.interfaceName = options.interfaceName;
     this.mode = options.mode;
     this.hci = options.hci;
     this.devices = options.devices.map((device) => {
-      const d = devices.initialize(device);
-      d.on('update', (data) => this.emit('deviceUpdate', { device, data }));
+      const d = devices.initialize(device, logger);
+
+      d.on('update', (data) => {
+        this.logger.log(`received device update for ${device.name}`);
+        this.emit('deviceUpdate', { device, data });
+      });
 
       return d;
     });
@@ -25,6 +31,7 @@ class Dongle extends Eventable {
     this.path = `${this.rootPath}${options.hci}`;
 
     this.currentTimeService = null;
+    this.logger = logger;
   }
 
   setup(bus, service) {
@@ -66,11 +73,9 @@ class Dongle extends Eventable {
     return new Promise((resolve, reject) => {
       service.getInterface(this.path, this.interfaceName, (exception, adapter) => {
         if (exception) {
-          exception = Array.isArray(exception) ? exception.join('.') : exception;
-
           reject(new UnknownError({
             troubleshooting: 'dongle#interface',
-            exception,
+            exception: Array.isArray(exception) ? exception.join('.') : exception,
           }));
         } else {
           resolve(adapter);
@@ -135,7 +140,8 @@ class Dongle extends Eventable {
           dev = dev[dev.length - 1];
 
           const props = {};
-          if (Array.isArray(message.body[1])) { // TODO: Write a working parser for this mess of arrays
+          // TODO: Write a working parser for this mess of arrays
+          if (Array.isArray(message.body[1])) {
             message.body[1].forEach((prop) => {
               if (Array.isArray(prop) && prop.length === 2 && Array.isArray(prop[1])) {
                 const key = prop[0];
@@ -146,7 +152,7 @@ class Dongle extends Eventable {
                     try {
                       val = val[0][0][1][1][0];
                     } catch (e) {
-                      console.reject('reject', e);
+                      this.logger.error('reject', e);
                     }
                   } else if (key === 'ServiceData') {
                     try {
@@ -155,7 +161,7 @@ class Dongle extends Eventable {
                         data: val[0][0][1][1][0],
                       };
                     } catch (e) {
-                      console.reject('reject', e);
+                      this.logger.error('reject', e);
                     }
                   } else if (val.length === 1) {
                     val = val[0];
@@ -167,7 +173,7 @@ class Dongle extends Eventable {
             });
           } else {
             // TODO: better log
-            console.log('Unhandled Device msg:', message, JSON.stringify(message));
+            this.logger.log('Unhandled Device msg:', message, JSON.stringify(message));
           }
 
           this.devices.map((device) => device.update(message.body[0], dev, props));
@@ -196,7 +202,7 @@ class Dongle extends Eventable {
           }
         } else {
           // TODO: better log
-          console.log('Unhandled other message:', message, JSON.stringify(message));
+          this.logger.log('Unhandled other message:', message, JSON.stringify(message));
         }
       }
     }
@@ -212,8 +218,11 @@ class Dongle extends Eventable {
     return Promise.all(promises);
   }
 
+  /**
+   * @param {number} maxTries
+   */
   connectDevice(service, device, maxTries = 1) {
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       this.getDeviceInterface(service, device, 'org.bluez.Device1')
         .then((deviceInterface) => device.connect(deviceInterface, maxTries))
         .then((response) => resolve(response))
@@ -221,6 +230,10 @@ class Dongle extends Eventable {
     });
   }
 
+  /**
+   * @param {object} device
+   * @param {string} device.macPath
+   */
   getDeviceInterface(service, device, ifaceName) {
     const path = `${this.path}/${device.macPath}`;
 

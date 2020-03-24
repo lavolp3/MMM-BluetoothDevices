@@ -3,6 +3,11 @@
 const UnknownError = require('../errors/UnknownError');
 
 class CurrentTimeService {
+  /**
+   * @param {object} options
+   * @param {string} options.hci
+   * @param {string|null} options.serviceName
+   */
   constructor(bus, service, options) {
     this.bus = bus;
     this.service = service;

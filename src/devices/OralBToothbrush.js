@@ -47,6 +47,10 @@ const MODES = {
 };
 
 class OralBToothbrush extends Device {
+  /**
+   * @param {array} props
+   * @param {buffer} props.ManufacturerData
+   */
   handleAdvertisingForDevice(props) {
     if (props.ManufacturerData) {
       const parsedData = this.parseData(props.ManufacturerData);
@@ -63,10 +67,17 @@ class OralBToothbrush extends Device {
     }
   }
 
+  /**
+   * @param {array} props
+   */
   handleNotificationForDevice(props) {
-    console.log('handleNotificationForDevice', props);
+    this.logger.log('handleNotificationForDevice', props);
   }
 
+  /**
+   * @param {buffer} data
+   * @returns {{mode: string, state: string, pressure: string, time: string, sector: string}}
+   */
   parseData(data) {
     return {
       state: data[3],

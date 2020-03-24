@@ -91,17 +91,15 @@ If your running MagicMirror in [docker](https://docs.magicmirror.builders/gettin
 ## Troubleshooting
 When occurring exceptions, that are thrown by the module, there is a `troubleshooting` key provided which corresponds to the following possible solutions:
 
-| Keys | Possible Solutions |
-| --- | --- |
-| services#destroy | - |
-| services#invalid-adapter
-dongle#interface | make sure your hci adapter is configure correctly, run `hciconfig` to see which hci adapters are available |
-| devices#could-not-connect
-dongle#device-interface | make sure your bluetooth mac is correct, device is on and ready for pairing when the node_helper is triggered |
-| devices#connect-error | - |
-| dongle#stop-discovery | you might have re-started the magic-mirror to many times in a short period, please wait 30 seconds before the next start |
-| dongle#start-discovery-filter | - |
-| dongle#start-discovery | - |
+| Keys                                                 | Possible Solutions                                                                                                       |
+| ---                                                  | ---                                                                                                                      |
+| services#destroy                                     | -                                                                                                                        |
+| services#invalid-adapter<br>dongle#interface         | make sure your hci adapter is configure correctly, run `hciconfig` to see which hci adapters are available               |
+| devices#could-not-connect<br>dongle#device-interface | make sure your bluetooth mac is correct, device is on and ready for pairing when the node_helper is triggered            |
+| devices#connect-error                                | -                                                                                                                        |
+| dongle#stop-discovery                                | you might have re-started the magic-mirror to many times in a short period, please wait 30 seconds before the next start |
+| dongle#start-discovery-filter                        | -                                                                                                                        |
+| dongle#start-discovery                               | -                                                                                                                        |
 
 ## Development
 I tried to make this package as generic as possible to allow support for more devices.

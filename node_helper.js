@@ -20,19 +20,17 @@ module.exports = NodeHelper.create({
 
     this.started = true;
 
-    console.log(`Starting hub for: ${this.name}`);
+    console.log(`${this.name} starting hub`);
 
     this.config = config;
-    this.dongle = hub.initialize(this.config);
+    this.dongle = hub.initialize(this.name, this.config);
 
     this.dongle.on('setupCompleted', () => {
-      console.log(`Hub successfully started for: ${this.name}`);
+      console.log(`${this.name} hub successfully started`);
     });
 
     this.dongle.on('deviceUpdate', ({ device, data }) => {
       this.devices[device.name] = { device, data };
-
-      console.log(`${this.name} received device update for ${device.name}`);
 
       this.sendSocketNotification('FETCH_TOOTHBRUSHES_RESULTS', this.devices);
     });
@@ -43,9 +41,11 @@ module.exports = NodeHelper.create({
       return;
     }
 
-    console.log(`Stopping hub for: ${this.name}`);
+    console.log(`${this.name} stopping hub`);
 
-    await dongle.destroy();
+    await this.dongle.destroy();
+
+    console.log(`${this.name} hub stopped`);
   },
 
   socketNotificationReceived(notification, payload) {
